@@ -1,0 +1,32 @@
+# Python
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git LFS — data files (large JSON/CSV/JS files tracked with LFS)
+_merged.json
+master_base.json
+allied_base.json
+dental_base.json
+diag_base.json
+facilities_base.json
+review_scores.json
+gp_prospects.csv
+hotdoc_spec_cache.json
+hotdoc_links.json
+data/
+data_files/

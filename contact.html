@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — docnearme</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232563eb'/%3E%3Cpath d='M16 6.2c-4.5 0-8 3.4-8 7.8 0 5.5 6.300 10.800 7.300 11.600.4.300.980.300 1.400 0 1-.8 7.300-6.100 7.300-11.600 0-4.400-3.500-7.800-8-7.800z' fill='%23fff'/%3E%3Cpath d='M14.600 10.200h2.800v2.600H20v2.800h-2.600v2.600h-2.800v-2.600H12v-2.800h2.600z' fill='%232563eb'/%3E%3C/svg%3E">
+<script>try{var __t=localStorage.getItem('dnm-theme');if(__t==='dark'||__t==='light')document.documentElement.setAttribute('data-theme',__t);}catch(e){}</script>
+<style>
+  :root{--bg:#f4f6f8;--panel:#ffffff;--panel2:#f3f5f8;--ink:#121922;--muted:#566473;--faint:#8793a0;--line:#e3e7ec;--accent:#2563eb}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1015;--panel:#121920;--panel2:#19222b;--ink:#eaf0f5;--muted:#a3b1bf;--faint:#73828f;--line:#232e39;--accent:#7aa7ff}}
+  :root[data-theme="dark"]{--bg:#0b1015;--panel:#121920;--panel2:#19222b;--ink:#eaf0f5;--muted:#a3b1bf;--faint:#73828f;--line:#232e39;--accent:#7aa7ff}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none;font-weight:550}a:hover{text-decoration:underline}
+  .top{position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--line)}
+  .top .in{max-width:860px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:9px;color:var(--ink);font-size:19px;font-weight:750;letter-spacing:-.03em}
+  .brand:hover{text-decoration:none}
+  .brand .mark{width:28px;height:28px;border-radius:8px;box-shadow:0 2px 8px rgba(37,99,235,.35)}
+  .brand b{font-weight:750;background:linear-gradient(90deg,#2563eb,#06b6d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+  nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;font-size:14px}
+  nav a{color:var(--muted);padding:6px 11px;border-radius:999px}
+  nav a:hover{color:var(--ink);background:var(--panel2);text-decoration:none}
+  nav a.on{color:var(--ink);background:var(--panel2)}
+  nav a.cta{color:#fff;background:var(--accent)}
+  :root[data-theme="dark"] nav a.cta{color:#0b1015}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav a.cta{color:#0b1015}}
+  main{max-width:860px;margin:0 auto;padding:34px 20px 70px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:34px 38px 30px}
+  h1{font-size:30px;line-height:1.2;letter-spacing:-.025em;margin:0 0 6px;text-wrap:balance}
+  .meta{color:var(--muted);font-size:14px;margin:0 0 22px}
+  .lead{font-size:17px;color:var(--ink);margin:0 0 8px;max-width:68ch}
+  h2{font-size:19px;letter-spacing:-.01em;margin:34px 0 8px;padding-top:22px;border-top:1px solid var(--line)}
+  p,li{max-width:70ch}
+  p{margin:0 0 12px}
+  ul{margin:0 0 12px;padding-left:22px}
+  li{margin:5px 0}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-size:15px;color:var(--muted);margin:16px 0}
+  .note b{color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0 14px}
+  th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:700}
+  .tw{overflow-x:auto}
+  form{margin-top:18px;display:grid;gap:16px;max-width:640px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  form label{display:grid;gap:6px;font-size:14px;font-weight:600;color:var(--ink)}
+  form small{font-weight:400;color:var(--muted);font-size:13px}
+  input[type=text],input[type=email],select,textarea{width:100%;font:inherit;font-size:16px;font-weight:400;color:var(--ink);background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+  textarea{resize:vertical;min-height:150px;line-height:1.5}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--panel)}
+  button[type=submit]{justify-self:start;font:inherit;font-size:15px;font-weight:650;color:#fff;background:#2563eb;border:0;border-radius:999px;padding:11px 22px;cursor:pointer}
+  button[type=submit]:hover{background:#1d4ed8}
+  button[type=submit]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .alert{border-radius:12px;padding:13px 16px;font-size:15px;margin:16px 0 4px;border:1px solid var(--line);background:var(--panel2)}
+  .alert.ok{border-color:rgba(21,163,74,.45);background:rgba(21,163,74,.10)}
+  .alert.err{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.08)}
+  .alert b{display:block;margin-bottom:2px}
+  .fine{font-size:13px;color:var(--muted);margin:0}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  footer{max-width:860px;margin:0 auto;padding:0 20px 46px;color:var(--faint);font-size:13px;display:flex;gap:14px;flex-wrap:wrap}
+  footer a{color:var(--muted);font-weight:500}
+  @media (max-width:640px){main{padding:16px 12px 50px}.card{padding:22px 18px;border-radius:14px}h1{font-size:25px}nav{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <a class="brand" href="/"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="dnm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#dnm)"/><path d="M16 6.2c-4.5 0-8 3.4-8 7.8 0 5.5 6.300 10.800 7.300 11.600.4.300.980.300 1.400 0 1-.8 7.300-6.100 7.300-11.600 0-4.400-3.500-7.800-8-7.800z" fill="#fff"/><path d="M14.600 10.200h2.800v2.600H20v2.800h-2.600v2.600h-2.800v-2.600H12v-2.800h2.600z" fill="#2563eb"/></svg><span>doc<b>near</b>me</span></a>
+  <nav aria-label="Site">
+    <a href="/about">About the data</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+    <a href="/contact" class="on" aria-current="page">Contact</a>
+    <a class="cta" href="/">Open the map</a>
+  </nav>
+</div></div>
+<main><article class="card">
+<h1>Contact docnearme</h1>
+<p class="lead">Use this form to have your details corrected or removed, to see what is held about you or your practice,
+or to raise a privacy question. Your message goes straight to the people who run docnearme.</p>
+__ALERT__
+<!--FORM-->
+<form method="post" action="/contact">
+  <input type="hidden" name="t" value="__TOKEN__">
+  <div class="hp" aria-hidden="true"><label>Leave this field empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+  <div class="grid">
+    <label>Your name <input type="text" name="name" required maxlength="120" autocomplete="name" value="__V_name__"></label>
+    <label>Your email <input type="email" name="email" required maxlength="200" autocomplete="email" value="__V_email__"><small>Only used to reply to you.</small></label>
+    <label>I am <select name="role">
+      <option value="practitioner">a practitioner</option>
+      <option value="practice">a practice manager or staff member</option>
+      <option value="other">someone else</option></select></label>
+    <label>This is about <select name="kind">
+      <option value="correct">correcting my details</option>
+      <option value="remove">removing my listing</option>
+      <option value="access">seeing what is held about me</option>
+      <option value="privacy">a privacy question or complaint</option>
+      <option value="other">something else</option></select></label>
+  </div>
+  <label>Practitioner or practice this concerns <input type="text" name="subject" maxlength="200" value="__V_subject__">
+    <small>For example: Dr Jane Citizen, Example Medical Centre, Chatswood.</small></label>
+  <label>Message <textarea name="message" required minlength="10" maxlength="5000" rows="7">__V_message__</textarea></label>
+  <button type="submit">Send message</button>
+  <p class="fine">What you enter is used only to deal with your request. See the <a href="/privacy">privacy policy</a>.</p>
+</form>
+<!--/FORM-->
+</article></main>
+<footer><span>© 2026 docnearme</span><a href="/about">About the data</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></footer>
+</body>
+</html>

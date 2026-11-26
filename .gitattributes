@@ -1,0 +1,16 @@
+# Git LFS — large data files
+*.json filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
+*.js filter=lfs diff=lfs merge=lfs -text
+
+# Specifically tracked files
+_merged.json filter=lfs diff=lfs merge=lfs -text
+master_base.json filter=lfs diff=lfs merge=lfs -text
+allied_base.json filter=lfs diff=lfs merge=lfs -text
+dental_base.json filter=lfs diff=lfs merge=lfs -text
+diag_base.json filter=lfs diff=lfs merge=lfs -text
+facilities_base.json filter=lfs diff=lfs merge=lfs -text
+review_scores.json filter=lfs diff=lfs merge=lfs -text
+gp_prospects.csv filter=lfs diff=lfs merge=lfs -text
+hotdoc_spec_cache.json filter=lfs diff=lfs merge=lfs -text
+hotdoc_links.json filter=lfs diff=lfs merge=lfs -text
