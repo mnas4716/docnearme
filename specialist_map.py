@@ -154,9 +154,9 @@ def geocode(rows, by_pc_loc, by_pc):
         })
     return out, missed
 
-# ---- record category (kind): gp / spec / diag (imaging & pathology) / allied -------------------------------------
-# Imaging & pathology are grouped apart from consulting specialists so they can be hidden with allied health under
-# the DOCTORS_ONLY switch. A record is "diag" only when EVERY slashed component is imaging/pathology, so a
+# ---- record category (kind): gp / spec / diag (imaging) / path (pathology) / allied ------------------------------
+# Imaging and pathology sites are kept apart from consulting specialists (and from each other) so they can be hidden
+# with allied health under the DOCTORS_ONLY switch. A record is "diag" only when EVERY slashed component is imaging/pathology, so a
 # "Cardiologist / Nuclear Medicine Physician" stays a specialist and an O&G ultrasound sub-spec is not miscounted.
 IMGPATH = re.compile(r"radiolog|nuclear medicine|patholog|\bimaging\b|sonograph", re.I)
 def _imgpath_component(c: str) -> bool:
@@ -205,6 +205,8 @@ def build(records):
         records = records + json.loads(dental_path.read_text())
     for r in records:                              # category tag on every record (doctors derived, allied preset)
         r["k"] = kind_of(r)
+        if r["k"] == "diag" and re.search(r"patholog", r.get("s") or "", re.I):
+            r["k"] = "path"                        # pathology collection centres are their own category, apart from imaging (user 2026-11-26)
         if r["k"] == "allied":                     # split allied -> physio / psych / other by specialty string (marker redesign)
             _s = r.get("s") or ""
             r["k"] = "physio" if re.search(r"physiotherap", _s, re.I) else "psych" if re.search(r"psycholog", _s, re.I) else "allied"
@@ -216,7 +218,7 @@ def build(records):
             if v and v.get("score") is not None:
                 r["rv"] = v
     if os.environ.get("DOCTORS_ONLY", "").strip().lower() in ("1", "on", "true", "yes"):
-        records = [r for r in records if r.get("k") in ("gp", "spec")]   # hide allied + imaging/pathology
+        records = [r for r in records if r.get("k") in ("gp", "spec")]   # hide allied + imaging + pathology
     specialties = collections.Counter(r["s"] for r in records if r["s"])
     states = collections.Counter(r["st"] for r in records)
     tiers = collections.Counter(r["t"] for r in records)
@@ -238,9 +240,9 @@ def build(records):
     meta_json = json.dumps(meta, separators=(",", ":"))
     # ---- overview + detail-on-demand re-architecture (fork-7) -------------------------------------------------
     # 1) OVERVIEW (blocks first paint, ~601 KB gz): one row per record [lat,lng,kindCode,id,score]; score=rv.score
-    #    or null. NO name/addr/email/phone. kindCode: gp0 spec1 diag2 allied3 pharmacy4 hospital5. Carries META too
+    #    or null. NO name/addr/email/phone. kindCode: gp0 spec1 diag2(imaging) allied3 pharmacy4 hospital5 physio6 psych7 dental8 path9. Carries META too
     #    (small, no PII) so the chrome (chips/legend/datalist) can render before the index arrives.
-    KC = {"gp": 0, "spec": 1, "diag": 2, "allied": 3, "pharmacy": 4, "hospital": 5, "physio": 6, "psych": 7, "dental": 8}
+    KC = {"gp": 0, "spec": 1, "diag": 2, "allied": 3, "pharmacy": 4, "hospital": 5, "physio": 6, "psych": 7, "dental": 8, "path": 9}
     ov = [[r["lat"], r["lng"], KC.get(r.get("k"), 1), i, (r.get("rv") or {}).get("score")]
           for i, r in enumerate(records)]
     ov_json = json.dumps({"ov": ov, "meta": meta}, separators=(",", ":"))
@@ -855,7 +857,7 @@ HTML = r"""<!doctype html>
 </div>
 <script>
 let DATA=[], META, OV=[], __booted=false, __hydrated=false, __hydrateFn=null;
-const KIND=['gp','spec','diag','allied','pharmacy','hospital','physio','psych','dental'];// overview kindCode -> kind
+const KIND=['gp','spec','diag','allied','pharmacy','hospital','physio','psych','dental','path'];// overview kindCode -> kind
 // Phase 1 (overview ~601 KB): META + compact rows. Boots the MAP + chrome immediately.
 function __dnmOv(d){
   if(__booted)return;
@@ -1240,10 +1242,10 @@ const F={q:'',qraw:'',toks:[],cq:null,sets:[],specSets:[],fixes:[],hln:[],exact:
          emailOnly:false,availOnly:false,ratedOnly:false,loc:null,sort:'rating',inview:false,inviewAuto:false};
 // "In map view" switched on automatically by near-me steps aside while a search is typed, so a search always looks everywhere
 function inviewOn(){return F.inview&&!(F.inviewAuto&&(F.toks.length>0||!!F.spec));}
-// a record's filter category: GP / Specialist (consulting doctors) / Imaging (imaging & pathology) / allied:<profession>
+// a record's filter category: GP / Specialist (consulting doctors) / Imaging / Pathology / allied:<profession>
 const PROF_LABEL={physio:'Physios',psychology:'Psychologists',ot:'OTs',podiatry:'Podiatrists',dietetics:'Dietitians',speech:'Speech pathologists',chiro:'Chiropractors',osteo:'Osteopaths',exercise_physiology:'Exercise physiologists',audiology:'Audiologists',optometry:'Optometrists',dentistry:'Dentists'};
 const PROF_ORDER=['physio','psychology','ot','podiatry','dietetics','speech','chiro','osteo','exercise_physiology','audiology','optometry','dentistry'];
-function catOf(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='gp'?'GP':k==='spec'?'Specialist':k==='diag'?'Imaging':k==='pharmacy'?'Pharmacy':k==='hospital'?'Hospital':k==='physio'?'Physio':k==='psych'?'Psych':k==='dental'?'Dental':'allied:'+(r.pg||'other');}
+function catOf(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='gp'?'GP':k==='spec'?'Specialist':k==='diag'?'Imaging':k==='path'?'Pathology':k==='pharmacy'?'Pharmacy':k==='hospital'?'Hospital':k==='physio'?'Physio':k==='psych'?'Psych':k==='dental'?'Dental':'allied:'+(r.pg||'other');}
 function match(r){
   if(F.loc&&!F.loc.has(r.__i))return false;
   if(!(F.toks.length||F.spec)&&!F.types.has(catOf(r)))return false;   // category gate applies while browsing; a search looks across every category
@@ -1274,7 +1276,7 @@ function rvcol(r){                           // colour by score; neutral grey wh
   return '#e0564f';
 }
 // ---- type avatar: the same colour + glyph as the map pin, reused in the list and the popup (presentation only) ----
-function pkOf(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='spec'?'sp':(k==='gp'||k==='diag'||k==='pharmacy'||k==='hospital'||k==='physio'||k==='psych'||k==='dental')?k:'allied';}
+function pkOf(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='spec'?'sp':(k==='gp'||k==='diag'||k==='path'||k==='pharmacy'||k==='hospital'||k==='physio'||k==='psych'||k==='dental')?k:'allied';}
 const __ico={};
 function icoURL(k){if(k in __ico)return __ico[k];try{const c=document.createElement('canvas');c.width=c.height=56;const x=c.getContext('2d');x.scale(2,2);glyph(x,14,k);return __ico[k]=c.toDataURL();}catch(e){return __ico[k]='';}}
 function avHTML(r,cls){const k=pkOf(r),u=icoURL(k);return `<span class="av${cls?' '+cls:''}" style="--c:${PINCOL[k]}" aria-hidden="true">${u?`<img src="${u}" alt="">`:''}</span>`;}
@@ -1325,9 +1327,9 @@ function hl(text){
   return out+esc(text.slice(pos));
 }
 
-// ---- review-score renderer (generic: any record with rv; "No reviews yet" for gp/spec/diag; nothing for allied/pharmacy/hospital) ----
+// ---- review-score renderer (generic: any record with rv; "No reviews yet" for gp/spec/diag/path; nothing for allied/pharmacy/hospital) ----
 const RV_METHOD=`<b>How the review score works.</b> The score is a 0–5 figure combining the ratings we hold for this practitioner from the sources shown. Each source is weighted by its number of reviews and lightly adjusted toward the overall average (so a few reviews can't outweigh hundreds). <b>Google ratings are the practitioner's clinic rating</b> — Google rates practices, not individual doctors. “No reviews yet” means we hold no ratings. We show ratings and counts only, and link to each source; we don't republish review text. Sources: Google (clinic), Healthshare (practitioner); more added over time.`;
-function rvShows(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='gp'||k==='spec'||k==='diag';}
+function rvShows(r){const k=r.k||(r.s==='General Practitioner'?'gp':'spec');return k==='gp'||k==='spec'||k==='diag'||k==='path';}
 function rvGmaps(r){
   const addr=[r.pr,r.addr,r.su,r.pc,(r.st&&r.st!=='?')?r.st:'','Australia'].filter(Boolean).join(' ');
   return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((r.n+' '+addr).replace(/\s+/g,' ').trim());
@@ -1463,7 +1465,7 @@ function markRow(){
 const STYLES_MAIN={light:'https://tiles.openfreemap.org/styles/positron',dark:'https://tiles.openfreemap.org/styles/fiord'};
 const STYLES_ALT={light:'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',dark:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'};
 let STYLES=STYLES_MAIN,FONT=['Noto Sans Bold'];
-const PINCOL={gp:'#1d4ed8',sp:'#0891b2',diag:'#d97706',allied:'#db2777',pharmacy:'#059669',hospital:'#dc2626',physio:'#65a30d',psych:'#7c3aed',dental:'#4f46e5'};
+const PINCOL={gp:'#1d4ed8',sp:'#0891b2',diag:'#d97706',path:'#0f766e',allied:'#db2777',pharmacy:'#059669',hospital:'#dc2626',physio:'#65a30d',psych:'#7c3aed',dental:'#4f46e5'};
 function glyph(x,m,k){   // white type-glyph on the colour disc; secondary to colour, aids discernibility + colour-blind users
   x.save();x.fillStyle='#fff';x.strokeStyle='#fff';x.lineWidth=2.4;x.lineJoin='round';x.lineCap='round';
   if(k==='hospital'){x.fillRect(m-3.2,m-10,6.4,20);x.fillRect(m-10,m-3.2,20,6.4);}
@@ -1471,7 +1473,8 @@ function glyph(x,m,k){   // white type-glyph on the colour disc; secondary to co
   else if(k==='physio'){x.beginPath();x.moveTo(m-10,m);x.lineTo(m-4.5,m);x.lineTo(m-2,m-7.5);x.lineTo(m+1.5,m+7.5);x.lineTo(m+4,m);x.lineTo(m+10,m);x.stroke();}
   else if(k==='pharmacy'){x.save();x.translate(m,m);x.rotate(-Math.PI/4);if(x.roundRect){x.beginPath();x.roundRect(-9,-4.6,18,9.2,4.6);x.stroke();}else{x.strokeRect(-9,-4.6,18,9.2);}x.beginPath();x.moveTo(0,-4.6);x.lineTo(0,4.6);x.stroke();x.restore();}
   else if(k==='gp'){x.beginPath();x.moveTo(m-6,m-10);x.lineTo(m-6,m-3);x.quadraticCurveTo(m-6,m+4,m,m+4);x.quadraticCurveTo(m+6,m+4,m+6,m-3);x.lineTo(m+6,m-10);x.stroke();x.beginPath();x.arc(m-6,m-10,1.7,0,7);x.arc(m+6,m-10,1.7,0,7);x.fill();x.beginPath();x.moveTo(m,m+4);x.lineTo(m,m+7);x.stroke();x.beginPath();x.arc(m,m+9,2.7,0,7);x.stroke();}
-  else if(k==='diag'){x.beginPath();x.moveTo(m-6.5,m-9);x.lineTo(m-1,m-6);x.stroke();x.beginPath();x.moveTo(m-3.5,m-7.5);x.quadraticCurveTo(m+4,m-4.5,m+1.5,m+2);x.stroke();x.beginPath();x.moveTo(m+1.5,m+2);x.lineTo(m,m+4.5);x.stroke();x.beginPath();x.moveTo(m-6.5,m+5);x.lineTo(m+4.5,m+5);x.stroke();x.beginPath();x.moveTo(m-7,m+9.5);x.lineTo(m+7,m+9.5);x.stroke();x.beginPath();x.moveTo(m+4.5,m+9.5);x.quadraticCurveTo(m+5.5,m+4,m+2.5,m+1);x.stroke();}
+  else if(k==='diag'){x.beginPath();x.moveTo(m-9.5,m-4.5);x.lineTo(m-9.5,m-9.5);x.lineTo(m-4.5,m-9.5);x.moveTo(m+4.5,m-9.5);x.lineTo(m+9.5,m-9.5);x.lineTo(m+9.5,m-4.5);x.moveTo(m+9.5,m+4.5);x.lineTo(m+9.5,m+9.5);x.lineTo(m+4.5,m+9.5);x.moveTo(m-4.5,m+9.5);x.lineTo(m-9.5,m+9.5);x.lineTo(m-9.5,m+4.5);x.stroke();x.beginPath();x.moveTo(m-6,m);x.lineTo(m+6,m);x.stroke();}
+  else if(k==='path'){x.beginPath();x.moveTo(m-6.5,m-9);x.lineTo(m-1,m-6);x.stroke();x.beginPath();x.moveTo(m-3.5,m-7.5);x.quadraticCurveTo(m+4,m-4.5,m+1.5,m+2);x.stroke();x.beginPath();x.moveTo(m+1.5,m+2);x.lineTo(m,m+4.5);x.stroke();x.beginPath();x.moveTo(m-6.5,m+5);x.lineTo(m+4.5,m+5);x.stroke();x.beginPath();x.moveTo(m-7,m+9.5);x.lineTo(m+7,m+9.5);x.stroke();x.beginPath();x.moveTo(m+4.5,m+9.5);x.quadraticCurveTo(m+5.5,m+4,m+2.5,m+1);x.stroke();}
   else if(k==='psych'){x.beginPath();x.arc(m,m,8,0,7);x.stroke();x.beginPath();x.moveTo(m,m-8);x.quadraticCurveTo(m-4.5,m-4,m-1.5,m);x.quadraticCurveTo(m+2,m+4,m,m+8);x.stroke();x.beginPath();x.moveTo(m-7.2,m-2.5);x.quadraticCurveTo(m-3,m-1.5,m-4,m+3.2);x.stroke();}
   else if(k==='allied'){x.beginPath();x.moveTo(m,m-1.5);x.bezierCurveTo(m,m-4.5,m-5,m-6.5,m-6.6,m-2.8);x.bezierCurveTo(m-8,m+0.6,m-3.6,m+2.8,m,m+5.6);x.bezierCurveTo(m+3.6,m+2.8,m+8,m+0.6,m+6.6,m-2.8);x.bezierCurveTo(m+5,m-6.5,m,m-4.5,m,m-1.5);x.fill();x.beginPath();x.arc(m,m+5.5,8,0.17*Math.PI,0.83*Math.PI);x.stroke();}
   else if(k==='dental'){x.beginPath();x.moveTo(m-7,m-3);x.bezierCurveTo(m-7.5,m-10.5,m+7.5,m-10.5,m+7,m-3);x.bezierCurveTo(m+6.6,m+1,m+5,m+3,m+4,m+8);x.quadraticCurveTo(m+3.2,m+10.2,m+2.2,m+7);x.lineTo(m+1.2,m+2.2);x.quadraticCurveTo(m,m+1,m-1.2,m+2.2);x.lineTo(m-2.2,m+7);x.quadraticCurveTo(m-3.2,m+10.2,m-4,m+8);x.bezierCurveTo(m-5,m+3,m-6.6,m+1,m-7,m-3);x.closePath();x.fill();}
@@ -1487,7 +1490,7 @@ function pinImage(col,kind,avail){        // a round badge drawn once per kind: 
   glyph(x,m,kind);
   const d=x.getImageData(0,0,S,S);return {width:S,height:S,data:new Uint8Array(d.data.buffer)};
 }
-function addPinImages(){['gp','sp','diag','allied','pharmacy','hospital','physio','psych','dental'].forEach(k=>[0,1].forEach(a=>{const id='pin-'+k+(a?'-av':'');if(!map.hasImage(id))map.addImage(id,pinImage(PINCOL[k],k,a),{pixelRatio:2});}));}
+function addPinImages(){['gp','sp','diag','path','allied','pharmacy','hospital','physio','psych','dental'].forEach(k=>[0,1].forEach(a=>{const id='pin-'+k+(a?'-av':'');if(!map.hasImage(id))map.addImage(id,pinImage(PINCOL[k],k,a),{pixelRatio:2});}));}
 function curTheme(){
   const t=document.documentElement.getAttribute('data-theme');
   if(t==='dark'||t==='light')return t;
@@ -1497,8 +1500,8 @@ function featuresFor(rows){
   const fs=new Array(rows.length),cats=new Set();
   for(let k=0;k<rows.length;k++){const r=rows[k];
     const kind=r.k||(r.s==='General Practitioner'?'gp':'spec');
-    const pk=kind==='gp'?'gp':kind==='spec'?'sp':kind==='diag'?'diag':kind==='pharmacy'?'pharmacy':kind==='hospital'?'hospital':kind==='physio'?'physio':kind==='psych'?'psych':kind==='dental'?'dental':'allied';
-    cats.add(kind==='gp'?'GP':kind==='spec'?'Specialist':kind==='diag'?'Imaging':kind==='pharmacy'?'Pharmacy':kind==='hospital'?'Hospital':kind==='physio'?'Physio':kind==='psych'?'Psych':kind==='dental'?'Dental':'allied');
+    const pk=kind==='gp'?'gp':kind==='spec'?'sp':kind==='diag'?'diag':kind==='path'?'path':kind==='pharmacy'?'pharmacy':kind==='hospital'?'hospital':kind==='physio'?'physio':kind==='psych'?'psych':kind==='dental'?'dental':'allied';
+    cats.add(kind==='gp'?'GP':kind==='spec'?'Specialist':kind==='diag'?'Imaging':kind==='path'?'Pathology':kind==='pharmacy'?'Pharmacy':kind==='hospital'?'Hospital':kind==='physio'?'Physio':kind==='psych'?'Psych':kind==='dental'?'Dental':'allied');
     fs[k]={type:'Feature',geometry:{type:'Point',coordinates:[r.lng,r.lat]},properties:{i:r.__i,t:r.t,p:'pin-'+pk+(r.av?'-av':''),g:kind==='gp'?1:0,a:r.av?1:0,n:r.n,d:kind==='gp'?(r.pr||''):(r.s||'')}};}
   curCats=cats;
   return {type:'FeatureCollection',features:fs};
@@ -1784,7 +1787,8 @@ function syncCats(){const el=$('cats');if(!el||!F.types)return;el.querySelectorA
 function renderLegend(){const L=$('legend');if(!L)return;const it=[];
   if(curCats.has('GP'))it.push(['#1d4ed8','GP']);
   if(curCats.has('Specialist'))it.push(['#0891b2','Specialist']);
-  if(curCats.has('Imaging'))it.push(['#d97706','Imaging / pathology']);
+  if(curCats.has('Imaging'))it.push(['#d97706','Imaging']);
+  if(curCats.has('Pathology'))it.push(['#0f766e','Pathology']);
   if(curCats.has('Pharmacy'))it.push(['#059669','Pharmacy']);
   if(curCats.has('Hospital'))it.push(['#dc2626','Hospital']);
   if(curCats.has('Physio'))it.push(['#65a30d','Physiotherapy']);
@@ -1795,7 +1799,7 @@ function renderLegend(){const L=$('legend');if(!L)return;const it=[];
   if(META.hasAvail)h+='<span><i class="bk"></i>Bookable online</span>';
   L.innerHTML=h;}
 (function(){
-  if(!DTYPES.length&&!alliedList.length&&!KN.diag&&!KN.pharmacy&&!KN.hospital)return;
+  if(!DTYPES.length&&!alliedList.length&&!KN.diag&&!KN.path&&!KN.pharmacy&&!KN.hospital)return;
   $('typeRow').hidden=false;
   // each type chip carries its map-pin colour, so the filter reads as the map key
   const tChip=(v,label,n,col,cls)=>{const b=mkChip(typesEl,v,`<span class="dot" style="background:${col}"></span>${label}`,n,(cls?cls+' ':'')+'tc');b.style.setProperty('--c',col);return b;};
@@ -1804,7 +1808,8 @@ function renderLegend(){const L=$('legend');if(!L)return;const it=[];
   if(KN.pharmacy)tChip('Pharmacy','Pharmacies',KN.pharmacy,PINCOL.pharmacy);
   if(KN.hospital)tChip('Hospital','Hospitals',KN.hospital,PINCOL.hospital);
   if(KN.dental)tChip('Dental','Dentists',KN.dental,PINCOL.dental);
-  if(KN.diag)tChip('Imaging','Imaging &amp; pathology',KN.diag,PINCOL.diag).title='Radiology, nuclear medicine & pathology';
+  if(KN.diag)tChip('Imaging','Imaging',KN.diag,PINCOL.diag).title='Radiology, nuclear medicine & breast screening';
+  if(KN.path)tChip('Pathology','Pathology',KN.path,PINCOL.path).title='Pathology collection centres';
   if(KN.physio)tChip('Physio','Physiotherapists',KN.physio,PINCOL.physio);
   if(KN.psych)tChip('Psych','Psychologists',KN.psych,PINCOL.psych);
   if(alliedList.length){
@@ -1819,14 +1824,14 @@ function renderLegend(){const L=$('legend');if(!L)return;const it=[];
   }
   // quick category pills under the search box: one tap toggles a type without opening the filter panel (they drive the same chips)
   (function(){const el=$('cats');if(!el)return;
-    [['GP','GPs',PINCOL.gp],['Specialist','Specialists',PINCOL.sp],['Pharmacy','Pharmacies',PINCOL.pharmacy],['Dental','Dentists',PINCOL.dental],['Hospital','Hospitals',PINCOL.hospital],['Imaging','Imaging',PINCOL.diag],['Physio','Physio',PINCOL.physio],['Psych','Psychology',PINCOL.psych]]
+    [['GP','GPs',PINCOL.gp],['Specialist','Specialists',PINCOL.sp],['Pharmacy','Pharmacies',PINCOL.pharmacy],['Dental','Dentists',PINCOL.dental],['Hospital','Hospitals',PINCOL.hospital],['Imaging','Imaging',PINCOL.diag],['Pathology','Pathology',PINCOL.path],['Physio','Physio',PINCOL.physio],['Psych','Psychology',PINCOL.psych]]
       .forEach(([v,lab,col])=>{if(!typesEl.querySelector('.chip[data-v="'+v+'"]'))return;
         const b=document.createElement('button');b.type='button';b.className='cat';b.dataset.v=v;b.setAttribute('aria-pressed','false');b.style.setProperty('--c',col);
         b.innerHTML=`<span class="dot" style="background:${col}"></span>${lab}`;el.appendChild(b);});
     if(alliedList.length){const m=document.createElement('button');m.type='button';m.className='cat more';m.textContent='More…';m.addEventListener('click',()=>{if($('more').hidden)$('moreBtn').click();});el.appendChild(m);}
     el.addEventListener('click',e=>{const c=e.target.closest('.cat[data-v]');if(!c)return;const chip=typesEl.querySelector('.chip[data-v="'+c.dataset.v+'"]');if(chip)chip.click();});
   })();
-  F.types=new Set(DTYPES);                                           // doctors on; imaging & allied start hidden
+  F.types=new Set(DTYPES);                                           // doctors on; imaging, pathology & allied start hidden
   typesEl.querySelectorAll('.chip').forEach(c=>{if(F.types.has(c.dataset.v))setOn(c,true);});
 })();
 ['A','B','C','D'].filter(t=>META.tiers[t]).forEach(t=>mkChip(tiersEl,t,`<span class="dot" style="background:${tcol(t)}"></span>${t}`,META.tiers[t],'t'+t).title='Tier '+t+(t==='A'?' — top priority':t==='D'?' — lowest priority':''));
